@@ -1,0 +1,17 @@
+.cus-shadow {
+  box-shadow: 0px 0px 8px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* GLOBAL STYLES
+-------------------------------------------------- */
+/* Padding below the footer and lighter body text */
+
+body {
+  padding-top: 3rem;
+  background-color: wheat;
+}
+
+html,
+body {
+  height: 100%;
+}
