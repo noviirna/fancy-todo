@@ -321,7 +321,7 @@ function updateTodo(i) {
     })
       .done(response => {
         if (response.project) {
-          getAllProjectTodos(response.project);
+          getAllProjectTodos(response.project._id);
         } else {
           getAllTodos();
         }

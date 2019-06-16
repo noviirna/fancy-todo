@@ -5,7 +5,7 @@ class ControllerProject {
   static all(req, res, next) {
     let user = decodeToken(req.headers.token)._id;
     Project.find()
-    
+      .populate('owner')
       .then(founds => {
         let result= []
         founds.forEach(found=>{
@@ -43,7 +43,14 @@ class ControllerProject {
   }
 
   static update(req, res, next) {
-    Project.findByIdAndUpdate(req.params.id, req.body)
+    const input = {
+      owner: req.body.owner,
+      name: req.body.name,
+      description: req.body.description,
+      members: req.body["members[]"]
+    };
+    console.log("update disini")
+    Project.findByIdAndUpdate(req.params.id, input)
       .then(updated => {
         res.status(200).json(updated);
       })

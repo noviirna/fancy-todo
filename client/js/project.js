@@ -96,7 +96,7 @@ function loadformproject() {
         </div>
 
         <div class="form-group">
-          <label for="members">MEmbers</label>
+          <label for="members">Members</label>
           <select class="selectpicker form-control mb-3 w-100" id="members" multiple title="Add Members">
             ${option}
           </select> 
@@ -114,11 +114,14 @@ function loadformproject() {
 }
 
 function loadprojectlist() {
-  $("#projectlist").html("")
+  $("#projectlist").html("");
   projects.forEach((project, i) => {
     let ownership = "bg-light";
-    if (project.owner == loggedInUser._id) {
+    let deletion = ""
+    
+    if (project.owner._id == loggedInUser._id) {
       ownership = "bg-warning";
+      deletion = `<i class="fa fa-trash text-danger" onclick="deleteProject('${i}')" ></i>`
     }
     $("#projectlist").append(`
   <div class="p-2 ${ownership} m-2">
@@ -126,17 +129,96 @@ function loadprojectlist() {
   <br>
   <small>
   Created At : ${new Date(project.createdAt).toLocaleDateString()}</small><br>
-  <div class="d-flex mt-2 justify-around-around">
-    <div class="col-auto">
-      <i class="fa fa-trash text-danger" onclick="deleteProject('${i}')" ></i>
+  <div class="d-flex mt-2 justify-content-between">
+    <div class="col-1">
+      ${deletion}
    </div>
     <div class="col-auto"><small>
-    <i class="fa fa-user"></i> ${project.members.length} Members</small>
+    <i class="fa fa-user"></i> ${project.members.length}</small>
     </div>
+    <div class="col-auto"><small>
+    <i class="fa fa-lock" aria-hidden="true"></i> 
+    ${project.owner.name}</small>
+    </div>
+
+    <div class="col-auto"><small><a href="#" onclick="viewProjectDetail('${
+      project._id
+    }')">
+    <i class="fa fa-pencil-square" aria-hidden="true"></i></a>
+    </small>
+    </div>
+
   </div>
   </div>
   `);
   });
+}
+
+function viewProjectDetail(id) {
+  getAllProjects();
+  var data = {};
+  projects.forEach(project => {
+    if (project._id === id) {
+      data = project;
+    }
+  });
+  let users = data.members;
+  $.ajax({
+    url: serverURL + "/users/allname",
+    method: `GET`,
+    headers: {
+      token: localStorage.getItem("token")
+    }
+  })
+    .done(response => {
+      let option = "";
+      response.forEach(user => {
+        let status = "";
+        if (users.indexOf(user._id) != -1) {
+          status = "selected";
+        }
+        if (user._id !== loggedInUser._id) {
+          option += `<option ${status} value="${user._id}">${
+            user.email
+          }</option>`;
+        }
+      });
+      let ability = "disabled";
+      let updButton = "";
+      if (data.owner._id == loggedInUser._id) {
+        updButton = `<button type="submit" class="btn btn-block btn-primary">Submit Data</button>`;
+        ability = "";
+      }
+      $("#formproject").html(`
+        <h2 class="p-3 mb-2 border-bottom border-danger">ViewProjects</h2>
+        <form class="p-2" onsubmit="updateProject('${data._id}')">
+          <div class="form-group">
+            <label for="name">Project Name</label>
+            <input type="text" class="form-control" id="name" placeholder="Project Name" ${ability}>
+          </div>
+          <div class="form-group">
+            <label for="projectdescription">Description</label>
+            <textarea class="form-control" rows="3" id="projectdescription" placeholder="Project Description" ${ability}></textarea>
+          </div>
+  
+          <div class="form-group">
+            <label for="members">Members</label>
+            <select class="selectpicker form-control mb-3 w-100" id="members" multiple title="Add Members" ${ability}>
+              ${option}
+            </select> 
+          </div>
+          ${updButton}
+        </form>
+        `);
+      $("select").selectpicker();
+      $("#name").val(data.name);
+      $("#projectdescription").val(data.description);
+    })
+    .fail(function(jqXHR, textStatus) {
+      console.log(JSON.stringify(jqXHR));
+      $("#projectlist").html("Something went wrong, please try again later");
+      swal("Sorry!", jqXHR.responseJSON.message, "error");
+    });
 }
 
 function getAllProjectTodos(id) {
@@ -168,7 +250,9 @@ function getAllProjectTodos(id) {
 function listprojecttodos(project, projectTodos) {
   reminder = [];
   $("#todolist").html(`
-    <h2 class="p-3 mb-2 border-bottom border-danger">${project.name}'s Todos</h2>
+    <h2 class="p-3 mb-2 border-bottom border-danger">${
+      project.name
+    }'s Todos</h2>
     `);
   projectTodos.forEach((todo, i) => {
     let today = new Date();
@@ -238,7 +322,7 @@ function newTodosProject(id) {
   let title = $("#title").val(),
     description = $("#description").val(),
     targetdate = $("#targetdate").val();
-    console.log(id)
+  console.log(id);
   if (title == "" || description == "" || targetdate == "") {
     swal("please complete the form!");
   } else if (new Date() > new Date(targetdate)) {
@@ -260,7 +344,7 @@ function newTodosProject(id) {
       }
     })
       .done(response => {
-          $("#title").val(""),
+        $("#title").val(""),
           $("#description").val(""),
           $("#targetdate").val(getTomorrowDate),
           getAllProjectTodos(response.project);
@@ -359,7 +443,6 @@ function newProject() {
       console.log(projects, "kokoko");
       getAllProjects();
       loadprojectlist();
-
     })
     .fail(function(jqXHR, textStatus) {
       console.log(JSON.stringify(jqXHR));
@@ -368,20 +451,78 @@ function newProject() {
     });
 }
 
-function deleteProject() {}
-
-function newMember(i) {
-  console.log("tambah member");
-  updateProject(i);
+function deleteProject(i) {
+  let id = projects[i]._id;
+  swal({
+    title: "Confirm Deletion",
+    text: "Are you sure to delete this todo?",
+    icon: "warning",
+    buttons: true,
+    dangerMode: true
+  }).then(willDelete => {
+    if (willDelete) {
+      $.ajax({
+        url: serverURL + "/projects/" + id,
+        method: `DELETE`,
+        headers: {
+          token: localStorage.getItem("token")
+        }
+      })
+        .done(response => {
+          $("#title").val(""),
+            $("#description").val(""),
+            $("#targetdate").val(getTomorrowDate),
+            getAllProjectTodos(id);
+          swal("Deleted", "That todo has been deleted", "success");
+        })
+        .fail(function(jqXHR, textStatus) {
+          console.log(JSON.stringify(jqXHR));
+          swal("Sorry!", jqXHR.responseJSON.message, "error");
+        });
+    }
+  });
 }
 
-function updateProject(i) {}
+function updateProject(id) {
+  console.log("HERE");
+  let input = {
+    owner: loggedInUser._id,
+    name: $("#name").val(),
+    description: $("#projectdescription").val(),
+    members: $("#members").val()
+  };
+  input.members.push(input.owner);
+  let url = `/projects/${id}?adminOnly=false`;
+  console.log(input);
+  console.log(url);
+  $.ajax({
+    url: serverURL + url,
+    method: `PATCH`,
+    headers: {
+      token: localStorage.getItem("token")
+    },
+    data: input
+  })
+    .done(response => {
+      projects = response;
+      $("#name").val("");
+      $("#description").val("");
+      $("#members").val("");
+      getAllProjects();
+      loadprojectlist();
+    })
+    .fail(function(jqXHR, textStatus) {
+      console.log(JSON.stringify(jqXHR, null, 2));
+      $("#projectlist").html("Something went wrong, please try again later");
+      swal("Sorry!", jqXHR.responseJSON.message, "error");
+    });
+}
 
 function updateTodosProject() {
   let target = todos[i];
 }
 
-function markAsDoneTP(i){
+function markAsDoneTP(i) {
   let target = todos[i];
   if (target.status.toLowerCase() == "not done") {
     target.status = "Completed";
@@ -398,19 +539,18 @@ function markAsDoneTP(i){
     data: target
   })
     .done(response => {
-      getAllProjects()
-      getAllProjectTodos(response.project)
+      getAllProjects();
+      getAllProjectTodos(response.project);
     })
     .fail(function(jqXHR, textStatus) {
       console.log(JSON.stringify(jqXHR));
       swal("Sorry!", jqXHR.responseJSON.message, "error");
     });
-
 }
 
 function deleteTodosProject(i) {
-  var id = todos[i]._id
-  let project = todos[i].project
+  var id = todos[i]._id;
+  let project = todos[i].project;
   swal({
     title: "Confirm Deletion",
     text: "Are you sure to delete this todo?",
