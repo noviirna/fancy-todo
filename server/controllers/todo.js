@@ -53,6 +53,7 @@ class ControllerTodo {
   static update(req, res, next) {
     Todo.findByIdAndUpdate(req.params.id, req.body)
       .then(updated => {
+        console.log("disini")
         res.status(200).json(updated);
       })
       .catch(next);

@@ -52,7 +52,7 @@ module.exports = {
             if (result.project) {
               // dan todo ada dalam project -> CEK MEMBERSHIP
               let authorizeduser = result.project.members;
-              if (authorizeduser.indexOf(theUser) !== -1) {
+              if (authorizeduser.indexOf(theUser) != -1) {
                 // kalau user adalah member dari project maka boleh akses
                 console.log("tauth 4a t");
                 next();
@@ -65,6 +65,7 @@ module.exports = {
               }
             } else {
               // dan ga ada dalam project -> CEK OWNERSHIP
+              
               if (result.owner == theUser) {
                 console.log("tauth 4b t");
                 // kalau user adalah owner todo maka boleh akses
@@ -142,13 +143,13 @@ module.exports = {
   },
   authorizationproject: function(req, res, next) {
     let theUser = decodeToken(req.headers.token)._id;
-    console.log("1");
+    console.log("1", req.params.id)
     Project.findById(req.params.id)
       .then(result => {
         // jika operasi berhasil
-        console.log("2");
+        console.log("2", result);
+        console.log(req.query);
         if (result) {
-          console.log("2a");
           // dan project ada
           // untuk delete project
           console.log(req.query);
@@ -164,8 +165,8 @@ module.exports = {
               });
             }
           }
-          // untuk update project
           else {
+            // untuk update project
             console.log("2b")
             let authorizeduser = result.members;
             console.log(authorizeduser, theUser)
@@ -182,6 +183,7 @@ module.exports = {
             }
           }
         } else {
+          console.log("4b")
           // dan project gak ada
           next({
             code: 404,
@@ -190,6 +192,7 @@ module.exports = {
         }
       })
       .catch(err => {
+        console.log(err)
         next({
           code: 500,
           message: `internal server error!`

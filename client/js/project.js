@@ -474,7 +474,8 @@ function deleteProject(i) {
           $("#title").val(""),
           $("#description").val(""),
           $("#targetdate").val(getTomorrowDate()),
-          getAllProjectTodos(id);
+          getAllProjects();
+          loadprojectlist();
           swal("Deleted", "That todo has been deleted", "success");
         })
         .fail(function(jqXHR, textStatus) {
