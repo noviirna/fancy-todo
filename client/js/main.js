@@ -13,12 +13,11 @@ $("form").on("submit", function(event) {
 
 $(document).ready(function() {
   checkLogin();
-  $('select').selectpicker();
 });
 
 function checkLogin() {
   if (localStorage.getItem("token")) {
-    loadprojectpage();
+    loadtodopage();
   } else {
     loadloginpage();
   }
