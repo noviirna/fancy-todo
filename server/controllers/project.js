@@ -13,7 +13,6 @@ class ControllerProject {
             result.push(found)
           }
         })
-        console.log(result, "all project");
         res.status(200).json(result);
       })
       .catch(next);
@@ -28,7 +27,6 @@ class ControllerProject {
   }
 
   static create(req, res, next) {
-    console.log(req.body);
     const input = {
       owner: req.body.owner,
       name: req.body.name,

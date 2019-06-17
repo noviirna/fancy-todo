@@ -3,7 +3,6 @@ const { decodeToken } = require(`../helpers/token`);
 
 class ControllerTodo {
   static all(req, res, next) {
-    console.log("c all 1");
     let user = decodeToken(req.headers.token)._id;
     Todo.find({})
       .populate("project")
@@ -52,7 +51,6 @@ class ControllerTodo {
   }
 
   static update(req, res, next) {
-    console.log("u1", req.params.id, req.body);
     Todo.findByIdAndUpdate(req.params.id, req.body)
       .then(updated => {
         res.status(200).json(updated);

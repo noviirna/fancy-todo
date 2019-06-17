@@ -441,8 +441,10 @@ function newProject() {
       $("#description").val("");
       $("#members").val("");
       console.log(projects, "kokoko");
-      getAllProjects();
-      loadprojectlist();
+      setTimeout(function(){
+        getAllProjects();
+        loadprojectlist();
+      }, 1000)
     })
     .fail(function(jqXHR, textStatus) {
       console.log(JSON.stringify(jqXHR));
@@ -462,7 +464,7 @@ function deleteProject(i) {
   }).then(willDelete => {
     if (willDelete) {
       $.ajax({
-        url: serverURL + "/projects/" + id,
+        url: serverURL + "/projects/" + id +"?adminOnly=true",
         method: `DELETE`,
         headers: {
           token: localStorage.getItem("token")
@@ -470,9 +472,9 @@ function deleteProject(i) {
       })
         .done(response => {
           $("#title").val(""),
-            $("#description").val(""),
-            $("#targetdate").val(getTomorrowDate),
-            getAllProjectTodos(id);
+          $("#description").val(""),
+          $("#targetdate").val(getTomorrowDate()),
+          getAllProjectTodos(id);
           swal("Deleted", "That todo has been deleted", "success");
         })
         .fail(function(jqXHR, textStatus) {
