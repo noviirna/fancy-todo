@@ -117,15 +117,17 @@ function loadprojectlist() {
   $("#projectlist").html("");
   projects.forEach((project, i) => {
     let ownership = "bg-light";
-    let deletion = ""
-    
+    let deletion = "";
+
     if (project.owner._id == loggedInUser._id) {
       ownership = "bg-warning";
-      deletion = `<i class="fa fa-trash text-danger" onclick="deleteProject('${i}')" ></i>`
+      deletion = `<i class="fa fa-trash text-danger" onclick="deleteProject('${i}')" ></i>`;
     }
     $("#projectlist").append(`
   <div class="p-2 ${ownership} m-2">
-  <a href="#" onclick="getAllProjectTodos('${project._id}')">${project.name}</a>
+  <a href="#todolist" onclick="getAllProjectTodos(projects[${i}])">${
+      project.name
+    }</a>
   <br>
   <small>
   Created At : ${new Date(project.createdAt).toLocaleDateString()}</small><br>
@@ -221,8 +223,11 @@ function viewProjectDetail(id) {
     });
 }
 
-function getAllProjectTodos(id) {
-  let target = id;
+function getAllProjectTodos(project) {
+  let target = project;
+  if (project._id) {
+    target = project._id;
+  }
   $.ajax({
     url: serverURL + "/todos/project/" + target,
     method: `GET`,
@@ -233,17 +238,20 @@ function getAllProjectTodos(id) {
     .done(response => {
       console.log(response);
       todos = response;
-      loadformnewprojecttodos(id);
-      listprojecttodos(todos[0].project, todos);
+      loadformnewprojecttodos(target);
+      setTimeout(function() {
+        listprojecttodos(todos[0].project, todos);
+      }, 500);
     })
     .fail((jqXHR, textStatus) => {
       console.log(JSON.stringify(jqXHR));
-      loadformnewprojecttodos(id);
+      loadformnewprojecttodos(target);
       $("#todolist").html(`
-      <h2 class="p-3 mb-2 border-bottom border-danger"> NOT FOUND . . .</h2>
-      NOT FOUND. . .
+      <h2 class="p-3 mb-2 border-bottom border-danger"> ${
+        project.name
+      } Still Do not have any todo ..</h2>
+      Make new Todo =============================== >
       `);
-      swal("Sorry!", jqXHR.responseJSON.message, "error");
     });
 }
 
@@ -254,6 +262,7 @@ function listprojecttodos(project, projectTodos) {
       project.name
     }'s Todos</h2>
     `);
+  
   projectTodos.forEach((todo, i) => {
     let today = new Date();
     let difference = new Date(todo.targetdate) - today;
@@ -292,7 +301,9 @@ function listprojecttodos(project, projectTodos) {
       let addition = "";
       $("#todolist").append(`
             <div class="p-2 ${todo.bg} m-2">
-            <a href="#" onclick="loadformdetailtodo('${i}')">${todo.title}</a>
+            <a href="#detailtodo" onclick="loadformdetailtodo('${i}')">${
+        todo.title
+      }</a>
             <br> ${addition}
             <small>
             Created At : ${new Date(
@@ -322,7 +333,7 @@ function newTodosProject(id) {
   let title = $("#title").val(),
     description = $("#description").val(),
     targetdate = $("#targetdate").val();
-  console.log(id);
+
   if (title == "" || description == "" || targetdate == "") {
     swal("please complete the form!");
   } else if (new Date() > new Date(targetdate)) {
@@ -373,7 +384,7 @@ function loadformnewprojecttodos(id) {
         <input type="date" class="form-control" id="targetdate" aria-descripbedby="dateHelp" placeholder="Target Date">
         <small id="dateHelp" class="form-text text-muted">Enter date later than today</small>
         </div>
-      <button type="submit" class="btn btn-block btn-primary">Submit</button>
+      <button type="submit class="btn btn-block btn-primary">Submit</button>
     </form>
   `);
   $("#targetdate").val(getTomorrowDate()); //yyyy-mm-dd
@@ -409,7 +420,6 @@ function getAllProjects() {
     .done(response => {
       projects = response;
       loadprojectlist();
-      console.log(projects, "project list");
     })
     .fail(function(jqXHR, textStatus) {
       console.log(JSON.stringify(jqXHR));
@@ -441,10 +451,8 @@ function newProject() {
       $("#description").val("");
       $("#members").val("");
       console.log(projects, "kokoko");
-      setTimeout(function(){
-        getAllProjects();
-        loadprojectlist();
-      }, 1000)
+      getAllProjects();
+      loadprojectlist();
     })
     .fail(function(jqXHR, textStatus) {
       console.log(JSON.stringify(jqXHR));
@@ -464,7 +472,7 @@ function deleteProject(i) {
   }).then(willDelete => {
     if (willDelete) {
       $.ajax({
-        url: serverURL + "/projects/" + id +"?adminOnly=true",
+        url: serverURL + "/projects/" + id + "?adminOnly=true",
         method: `DELETE`,
         headers: {
           token: localStorage.getItem("token")
@@ -472,9 +480,9 @@ function deleteProject(i) {
       })
         .done(response => {
           $("#title").val(""),
-          $("#description").val(""),
-          $("#targetdate").val(getTomorrowDate()),
-          getAllProjects();
+            $("#description").val(""),
+            $("#targetdate").val(getTomorrowDate()),
+            getAllProjects();
           loadprojectlist();
           swal("Deleted", "That todo has been deleted", "success");
         })
